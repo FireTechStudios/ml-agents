@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Pathfinding;
 
 public class BoardManager : MonoBehaviour
 {
@@ -16,17 +17,38 @@ public class BoardManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
+
         staticSize = size;
 
         playerHoldingTiles = new bool[size.x, size.y][];
-        
+
         SpawnGrid(size.x, size.y);
+        SetupAStar();
 
         //Camera FOV & POS
         cam.fieldOfView = Mathf.Clamp(Mathf.Max(size.x, size.y) * 10f, 90, 120);
         cam.gameObject.transform.position = new Vector3(gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.x, gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.y, -10 - (1 + Mathf.Max(size.x, size.y) / 10f)); //Move camera to centre of board
         
     }
+
+    void SetupAStar() //https://arongranberg.com/astar/docs/graphupdates.html
+    {
+
+        AstarPath.active.AddWorkItem(new AstarWorkItem(ctx => {
+            var gg = AstarPath.active.data.gridGraph;
+
+            gg.center = new Vector3(gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.x, gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.y, transform.position.z);
+            gg.SetDimensions(size.x, size.y, 1f);
+
+
+            gg.GetNodes(node => gg.CalculateConnections((GridNodeBase)node));
+
+        }));
+
+        AstarPath.active.Scan();
+    }
+
 
     void SpawnGrid(int x, int y)
     {

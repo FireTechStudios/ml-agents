@@ -46,15 +46,18 @@ public class TileObject : MonoBehaviour
         if (playerHolding[0] == true) //Empty
         {
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1);
+            gameObject.tag = "Tile";
             //Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
         }
         if (playerHolding[1] == true) //Player1
         {
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1,0,0);
+            gameObject.layer = 10;
         }
         if (playerHolding[2] == true) //Player2
         {
             gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1);
+            gameObject.layer = 11;
         }
 
     }
