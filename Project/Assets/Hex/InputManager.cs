@@ -12,6 +12,11 @@ public class InputManager : MonoBehaviour
 
     public static Vector2Int latestMove;
 
+    public List<Vector2Int> player1Tiles;
+    public List<Vector2Int> player2Tiles;
+
+    public static List<Vector2Int>[] playerTiles = new List<Vector2Int>[3] {null, null, null};
+
     Ray ray;
     RaycastHit hit;
 
@@ -25,6 +30,7 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
         if (Input.GetMouseButtonDown(0) && humanPlayer)// && !player2Turn)
         {
             // Reset ray with new mouse position
@@ -79,15 +85,24 @@ public class InputManager : MonoBehaviour
 
         latestMove = tile.tileID;
 
+        Vector2Int id = new Vector2Int(tileId.x, tileId.y);
+
         if (player2Turn) //Player 2's turn
         {
             player2Turn = false;
             tile.playerHolding[2] = true;
+            player2Tiles.Add(new Vector2Int(id.x, id.y));
+
         }
         else
         {
             player2Turn = true;
             tile.playerHolding[1] = true;
+            player1Tiles.Add(new Vector2Int(id.x, id.y));
+
         }
+
+        playerTiles[1] = player1Tiles;
+        playerTiles[2] = player2Tiles;
     }
 }

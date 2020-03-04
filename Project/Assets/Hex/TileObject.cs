@@ -8,6 +8,7 @@ public class TileObject : MonoBehaviour
     public bool[] playerHolding; //[emptyTile, player1Held, player2Held]
     public List<Vector2Int> adjacentTiles = new List<Vector2Int>();
     public List<Vector2Int> sameAdjacent = new List<Vector2Int>();
+    public List<GameObject> adjacentGO = new List<GameObject>();
     public int lastPlayer;
     private int previousPlayer;
     public List<bool> winCondition = new List<bool>();
@@ -116,6 +117,20 @@ public class TileObject : MonoBehaviour
                 }
             }
 
+        }
+
+        GameObjectAdjacent();
+    }
+
+    public void GameObjectAdjacent()
+    {
+        foreach(Vector2Int id in sameAdjacent)
+        {
+            if(!adjacentGO.Contains(BoardManager.gridTiles[id.x, id.y].gameObject))
+            {
+                adjacentGO.Add(BoardManager.gridTiles[id.x, id.y].gameObject);
+            }
+            //Debug.Log(id);
         }
     }
 
