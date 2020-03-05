@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class BoardAnalyser : MonoBehaviour
 {
+    public BoardManager bM;
+
     public int lastPlayer;
     private int previousPlayer;
-    public static bool win;
+    public bool win;
     public Vector2Int winMet = new Vector2Int(0, 0);
     private List<Vector2Int> visited;
     public List<Vector2Int> toCheck;
@@ -23,22 +25,22 @@ public class BoardAnalyser : MonoBehaviour
     void Update()
     {
         //Determine who went last
-        if (BoardManager.gridTiles[InputManager.latestMove.x, InputManager.latestMove.y].GetComponent<TileObject>().playerHolding[1] == true) //Player1
+        if (bM.gridTiles[bM.iM.latestMove.x, bM.iM.latestMove.y].GetComponent<TileObject>().playerHolding[1] == true) //Player1
         {
             lastPlayer = 1;
         }
-        if (BoardManager.gridTiles[InputManager.latestMove.x, InputManager.latestMove.y].GetComponent<TileObject>().playerHolding[2] == true) //Player2
+        if (bM.gridTiles[bM.iM.latestMove.x, bM.iM.latestMove.y].GetComponent<TileObject>().playerHolding[2] == true) //Player2
         {
             lastPlayer = 2;
         }
 
         if (lastPlayer == 1)
         {
-            playerHeld = InputManager.playerTiles[1];
+            playerHeld = bM.iM.playerTiles[1];
         }
         if (lastPlayer == 2)
         {
-            playerHeld = InputManager.playerTiles[2];
+            playerHeld = bM.iM.playerTiles[2];
         }
 
         if (previousPlayer != lastPlayer) //Clear if new player
@@ -60,7 +62,7 @@ public class BoardAnalyser : MonoBehaviour
             toCheck = new List<Vector2Int>();
 
 
-            BuildToCheckList(new Vector2Int(InputManager.latestMove.x, InputManager.latestMove.y));
+            BuildToCheckList(new Vector2Int(bM.iM.latestMove.x, bM.iM.latestMove.y));
             CheckForWin(); //check based on the current to check list vein
         }
         previousPlayer = lastPlayer;
@@ -69,7 +71,17 @@ public class BoardAnalyser : MonoBehaviour
         {
             visited = new List<Vector2Int>();
             toCheck = new List<Vector2Int>();
-            Debug.Log("Player "+lastPlayer+" wins");
+
+            if(lastPlayer == 1)
+            {
+                bM.player1Score += 1;
+                //HexAgent.AddReward(-1); //Assume ai is 2nd player for now
+            }
+            else
+            {
+                bM.player2Score += 1;
+                //HexAgent.AddReward(1);
+            }
         }
 
     }
@@ -85,7 +97,7 @@ public class BoardAnalyser : MonoBehaviour
 
         foreach(Vector3Int currentTile in toCheck)
         {
-            TileObject tileData = BoardManager.gridTiles[currentTile.x, currentTile.y].GetComponent<TileObject>();
+            TileObject tileData = bM.gridTiles[currentTile.x, currentTile.y].GetComponent<TileObject>();
 
             if(lastPlayer == 1) //Player 1 wants top[0] and bottom[1]
             {
@@ -121,14 +133,13 @@ public class BoardAnalyser : MonoBehaviour
     private void BuildToCheckList(Vector2Int fromTo)
     {
 
-        TileObject tile = BoardManager.gridTiles[fromTo.x, fromTo.y].GetComponent<TileObject>();
+        TileObject tile = bM.gridTiles[fromTo.x, fromTo.y].GetComponent<TileObject>();
 
         //Debug.Log("else");
         foreach (GameObject adjacentTile in tile.adjacentGO)
         {
             //Get ID of adjacent tile
             Vector2Int id = adjacentTile.GetComponent<TileObject>().tileID; //New tile
-
 
             if (!toCheck.Contains(id)) //Continue if not already visited
             {
@@ -137,7 +148,7 @@ public class BoardAnalyser : MonoBehaviour
             }
             else
             {
-                //Debug.Log("end of branch");
+                //Debug.Log("already checked" + id);
             }
         }
         visited.Add(new Vector2Int(fromTo.x, fromTo.y));

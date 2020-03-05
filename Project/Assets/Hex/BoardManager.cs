@@ -1,23 +1,39 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class BoardManager : MonoBehaviour
 {
+    public HexAgent player1;
+    public HexAgent player2;
+
+    public InputManager iM;
+    public BoardAnalyser bA;
+
+    public List<Vector2Int> invalidMoves;
+
     public Vector2Int size; //Determines the size of the board
-    public static Vector2Int staticSize;
+    public Vector2Int staticSize;
     public bool[,][] playerHoldingTiles; //2D array with each array point being [x,x,x]
     public GameObject tilePrefab;
     public GameObject deadTile;
     private Transform pos;
-    public static GameObject[,] gridTiles;
+    public GameObject[,] gridTiles;
     public Camera cam;
+
+    public static bool lastGameFirstPlayer;
+
+    public int player1Score;
+    public int player2Score;
+    public TextMeshProUGUI counter;
 
 
     // Start is called before the first frame update
     void Start()
     {
-
+        iM = GetComponent<InputManager>();
+        bA = GetComponent<BoardAnalyser>();
 
         staticSize = size;
 
@@ -28,7 +44,16 @@ public class BoardManager : MonoBehaviour
         //Camera FOV & POS
         cam.fieldOfView = Mathf.Clamp(Mathf.Max(size.x, size.y) * 10f, 90, 120);
         cam.gameObject.transform.position = new Vector3(gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.x, gridTiles[size.x / 2, size.y / 2].gameObject.transform.position.y, -10 - (1 + Mathf.Max(size.x, size.y) / 10f)); //Move camera to centre of board
-        
+
+        if (player1 != null)
+        {
+            player1.bM = GetComponent<BoardManager>();
+        }
+        if (player2 != null)
+        {
+            player2.bM = GetComponent<BoardManager>();
+        }
+
     }
 
     void SpawnGrid(int x, int y)
@@ -46,6 +71,8 @@ public class BoardManager : MonoBehaviour
                 gridTiles[i, j].GetComponent<TileObject>().tileID = new Vector2Int(i, j); //Assign GridID
 
                 gridTiles[i, j].transform.parent = transform;
+
+                gridTiles[i, j].GetComponent<TileObject>().bM = GetComponent<BoardManager>();
             }
         }
 
@@ -87,7 +114,7 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        if (BoardAnalyser.win)
+        if (bA.win)
         {
             foreach(Transform child in transform)
             {
@@ -95,7 +122,23 @@ public class BoardManager : MonoBehaviour
             }
 
             SpawnGrid(size.x, size.y);
-            BoardAnalyser.win = false;
+
+            if(lastGameFirstPlayer)
+            {
+                lastGameFirstPlayer = false;
+            }
+            else
+            {
+                lastGameFirstPlayer = true;
+            }
+
+            iM.player2Turn = lastGameFirstPlayer;
+
+            bA.win = false;
         }
+
+        counter.text = "<color=red>Player 1</color> Wins:\n<b>"+ player1Score.ToString() + "</b>\n\n<color=blue>Player 2</color> Wins:\n<b>"+ player2Score.ToString() + "</b>\n";
+
     }
+
 }

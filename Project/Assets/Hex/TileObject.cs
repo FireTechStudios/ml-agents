@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class TileObject : MonoBehaviour
 {
+    public BoardManager bM;
+
     public Vector2Int tileID;
     public bool[] playerHolding; //[emptyTile, player1Held, player2Held]
+    public int playerHoldingInt;
     public List<Vector2Int> adjacentTiles = new List<Vector2Int>();
     public List<Vector2Int> sameAdjacent = new List<Vector2Int>();
     public List<GameObject> adjacentGO = new List<GameObject>();
@@ -21,7 +24,7 @@ public class TileObject : MonoBehaviour
         playerHolding = new bool[3];
         playerHolding[0] = true; //Set emptyTile to true
 
-        if (tileID.y == BoardManager.staticSize.y - 1)
+        if (tileID.y == bM.staticSize.y - 1)
         {
             winCondition[0] = true; //Top
         }
@@ -33,7 +36,7 @@ public class TileObject : MonoBehaviour
         {
             winCondition[2] = true; //Left
         }
-        if (tileID.x == BoardManager.staticSize.x - 1) //10 = 10
+        if (tileID.x == bM.staticSize.x - 1) //10 = 10
         {
             winCondition[3] = true; //Right
         }
@@ -42,21 +45,26 @@ public class TileObject : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CheckForPlayerChange(); //And call for update if nesseccary
+        //CheckForPlayerChange(); //And call for update if nesseccary
+
+        GetAdjacent(tileID.x, tileID.y);
 
         if (playerHolding[0] == true) //Empty
         {
+            playerHoldingInt = 0;
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1);
             gameObject.tag = "Tile";
-            //Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            //gameObject.GetComponent<SpriteRenderer>().color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
         }
         if (playerHolding[1] == true) //Player1
         {
+            playerHoldingInt = 1;
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1,0,0);
             gameObject.layer = 10;
         }
         if (playerHolding[2] == true) //Player2
         {
+            playerHoldingInt = 2;
             gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1);
             gameObject.layer = 11;
         }
@@ -66,11 +74,11 @@ public class TileObject : MonoBehaviour
     void CheckForPlayerChange()
     {
         //Determine who went last
-        if (BoardManager.gridTiles[InputManager.latestMove.x, InputManager.latestMove.y].GetComponent<TileObject>().playerHolding[1] == true) //Player1
+        if (bM.gridTiles[bM.iM.latestMove.x, bM.iM.latestMove.y].GetComponent<TileObject>().playerHolding[1] == true) //Player1
         {
             lastPlayer = 1;
         }
-        if (BoardManager.gridTiles[InputManager.latestMove.x, InputManager.latestMove.y].GetComponent<TileObject>().playerHolding[2] == true) //Player2
+        if (bM.gridTiles[bM.iM.latestMove.x, bM.iM.latestMove.y].GetComponent<TileObject>().playerHolding[2] == true) //Player2
         {
             lastPlayer = 2;
         }
@@ -103,17 +111,21 @@ public class TileObject : MonoBehaviour
     {
         for (int i = 0; i < 6; i++)
         {
-            if(adjacentTiles[i].x < 0 || adjacentTiles[i].y < 0 || adjacentTiles[i].x > BoardManager.staticSize.x -1 || adjacentTiles[i].y > BoardManager.staticSize.y - 1) //Invalid if negative
+            if(adjacentTiles[i].x < 0 || adjacentTiles[i].y < 0 || adjacentTiles[i].x > bM.staticSize.x -1 || adjacentTiles[i].y > bM.staticSize.y - 1) //Invalid if negative
             {
                 
             }
             else
             {
-                if (BoardManager.gridTiles[adjacentTiles[i].x, adjacentTiles[i].y].GetComponent<TileObject>().playerHolding[1] == playerHolding[1] &&
-                    BoardManager.gridTiles[adjacentTiles[i].x, adjacentTiles[i].y].GetComponent<TileObject>().playerHolding[2] == playerHolding[2]
+                if (bM.gridTiles[adjacentTiles[i].x, adjacentTiles[i].y].GetComponent<TileObject>().playerHolding[1] == playerHolding[1] &&
+                    bM.gridTiles[adjacentTiles[i].x, adjacentTiles[i].y].GetComponent<TileObject>().playerHolding[2] == playerHolding[2]
                     ) //adjacent tile is of same player
                 {
-                    sameAdjacent.Add(new Vector2Int(adjacentTiles[i].x, adjacentTiles[i].y));
+                    if(!sameAdjacent.Contains(new Vector2Int(adjacentTiles[i].x, adjacentTiles[i].y)))
+                    {
+                        sameAdjacent.Add(new Vector2Int(adjacentTiles[i].x, adjacentTiles[i].y));
+
+                    }
                 }
             }
 
@@ -126,9 +138,9 @@ public class TileObject : MonoBehaviour
     {
         foreach(Vector2Int id in sameAdjacent)
         {
-            if(!adjacentGO.Contains(BoardManager.gridTiles[id.x, id.y].gameObject))
+            if(!adjacentGO.Contains(bM.gridTiles[id.x, id.y].gameObject))
             {
-                adjacentGO.Add(BoardManager.gridTiles[id.x, id.y].gameObject);
+                adjacentGO.Add(bM.gridTiles[id.x, id.y].gameObject);
             }
             //Debug.Log(id);
         }

@@ -5,17 +5,21 @@ using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
-    public bool humanPlayer;
-    public bool demoRandom;
+    public BoardManager bM;
 
-    public static bool player2Turn;
+    public bool[] bots = new bool[2] {true, true}; //Both unchecked, both bots
+    public Vector2Int[] playerChoice = new Vector2Int[2] {Vector2Int.zero, Vector2Int.zero};
 
-    public static Vector2Int latestMove;
+    public Vector2Int aiMove = new Vector2Int(-1,-1);
+
+    public bool player2Turn;
+
+    public Vector2Int latestMove;
 
     public List<Vector2Int> player1Tiles;
     public List<Vector2Int> player2Tiles;
 
-    public static List<Vector2Int>[] playerTiles = new List<Vector2Int>[3] {null, null, null};
+    public List<Vector2Int>[] playerTiles = new List<Vector2Int>[3] {null, null, null};
 
     Ray ray;
     RaycastHit hit;
@@ -31,78 +35,122 @@ public class InputManager : MonoBehaviour
     void Update()
     {
 
-        if (Input.GetMouseButtonDown(0) && humanPlayer)// && !player2Turn)
+        if (Input.GetMouseButtonDown(0) && !player2Turn && bots[0] == false)//Player 1 human
         {
-            // Reset ray with new mouse position
-            ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit[] hits = Physics.RaycastAll(ray);
-            foreach (RaycastHit hit in hits)
-            {
-                if (hit.collider.gameObject.tag == "Tile")
-                {
-                    bool[] holding = hit.collider.gameObject.GetComponent<TileObject>().playerHolding;
-
-                    if (holding[0] == true) //empty
-                    {
-                        SelectTile(hit.collider.gameObject.GetComponent<TileObject>().tileID);
-                    }
-                }
-            }
-
-            if (demoRandom && player2Turn)
-            {
-                StartCoroutine(randomChoice());
-            }
-
+            SelectTile(rayCastClick());
+        }
+        if (Input.GetMouseButtonDown(0) && player2Turn && bots[1] == false)//Player 2 human
+        {
+            SelectTile(rayCastClick());
         }
 
-        //if (Input.GetKeyDown(KeyCode.Q))
-        //{
-        //    SelectTile(new Vector2Int(temp, 0));
-        //}
+        if (!player2Turn && bots[0] == true && aiMove != new Vector2Int(-1, -1))//Player 1 random
+        {
+            SelectTile(aiMove);
+            aiMove = new Vector2Int(-1, -1);
+        }
+        if (player2Turn && bots[1] == true && aiMove != new Vector2Int(-1, -1))//Player 2 random
+        {
+            SelectTile(aiMove);
+            aiMove = new Vector2Int(-1, -1);
+        }
+        if(false) //random bots
+        {
+            if (!player2Turn && bots[0] == true)//Player 1 random
+            {
+                int x = UnityEngine.Random.Range(0, bM.staticSize.x);
+                int y = UnityEngine.Random.Range(0, bM.staticSize.y);
+
+                Vector2Int randomChoice = new Vector2Int(x, y);
+
+                SelectTile(randomChoice);
+            }
+            if (player2Turn && bots[1] == true)//Player 2 random
+            {
+                int x = UnityEngine.Random.Range(0, bM.staticSize.x);
+                int y = UnityEngine.Random.Range(0, bM.staticSize.y);
+
+                Vector2Int randomChoice = new Vector2Int(x, y);
+
+                SelectTile(randomChoice);
+            }
+        }
     }
 
-    public IEnumerator randomChoice()
+    public Vector2Int rayCastClick()
     {
-        Vector2Int random = new Vector2Int(UnityEngine.Random.Range(0, BoardManager.staticSize.x), UnityEngine.Random.Range(0, BoardManager.staticSize.y));
+        //Debug.Log("click");
 
-        if(BoardManager.gridTiles[random.x, random.y].GetComponent<TileObject>().playerHolding[0] == false)
+        Vector2Int clicked = new Vector2Int(-1,-1);
+
+        // Reset ray with new mouse position
+        ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit[] hits = Physics.RaycastAll(ray);
+        foreach (RaycastHit hit in hits)
         {
-            StartCoroutine(randomChoice());
-        }
-        else //Empty tile
-        {
-            yield return new WaitForSeconds(0.25f);
-            SelectTile(new Vector2Int(random.x, random.y));
+            if (hit.collider.gameObject.tag == "Tile")
+            {
+                clicked = hit.collider.gameObject.GetComponent<TileObject>().tileID;
+                //Debug.Log("hit" + clicked);
+            }
         }
 
+        //Debug.Log("end" + clicked);
+
+        return clicked;
     }
 
     void SelectTile(Vector2Int tileId)
     {
-        TileObject tile = BoardManager.gridTiles[tileId.x, tileId.y].GetComponent<TileObject>();
-        Array.Clear(tile.playerHolding, 0, tile.playerHolding.Length); //Set affiliation to false
+        
+        bool validChoice = false;
 
-        latestMove = tile.tileID;
-
-        Vector2Int id = new Vector2Int(tileId.x, tileId.y);
-
-        if (player2Turn) //Player 2's turn
+        foreach (GameObject x in bM.gridTiles) //If value chosen is within range
         {
-            player2Turn = false;
-            tile.playerHolding[2] = true;
-            player2Tiles.Add(new Vector2Int(id.x, id.y));
-
-        }
-        else
-        {
-            player2Turn = true;
-            tile.playerHolding[1] = true;
-            player1Tiles.Add(new Vector2Int(id.x, id.y));
-
+            if (x.GetComponent<TileObject>().tileID == tileId)
+            {
+                validChoice = true;
+            }
         }
 
-        playerTiles[1] = player1Tiles;
-        playerTiles[2] = player2Tiles;
+        bool[] holding = bM.gridTiles[tileId.x, tileId.y].GetComponent<TileObject>().playerHolding;
+
+        try
+        {
+            if (holding[0] == true && validChoice && !bM.bA.win) //empty tile, continue
+            {
+                TileObject tile = bM.gridTiles[tileId.x, tileId.y].GetComponent<TileObject>();
+                Array.Clear(tile.playerHolding, 0, tile.playerHolding.Length); //Set affiliation to false
+
+                latestMove = tile.tileID;
+
+                Vector2Int id = new Vector2Int(tileId.x, tileId.y);
+
+                if (player2Turn) //Player 2's turn
+                {
+                    player2Turn = false;
+                    tile.playerHolding[2] = true;
+                    player2Tiles.Add(new Vector2Int(id.x, id.y));
+                    bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
+
+                }
+                else
+                {
+                    player2Turn = true;
+                    tile.playerHolding[1] = true;
+                    player1Tiles.Add(new Vector2Int(id.x, id.y));
+                    bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
+
+                }
+
+                playerTiles[1] = player1Tiles;
+                playerTiles[2] = player2Tiles;
+            }
+        }
+        catch
+        {
+            //invalid selection
+        }
+
     }
 }
