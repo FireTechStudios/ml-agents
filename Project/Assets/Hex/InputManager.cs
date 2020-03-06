@@ -131,6 +131,8 @@ public class InputManager : MonoBehaviour
                     player2Turn = false;
                     tile.playerHolding[2] = true;
                     player2Tiles.Add(new Vector2Int(id.x, id.y));
+
+                    bM.validMoves.Remove(new Vector2Int(id.x, id.y));
                     bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
 
                 }
@@ -139,12 +141,15 @@ public class InputManager : MonoBehaviour
                     player2Turn = true;
                     tile.playerHolding[1] = true;
                     player1Tiles.Add(new Vector2Int(id.x, id.y));
+
+                    bM.validMoves.Remove(new Vector2Int(id.x, id.y));
                     bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
 
                 }
 
                 playerTiles[1] = player1Tiles;
                 playerTiles[2] = player2Tiles;
+
             }
         }
         catch

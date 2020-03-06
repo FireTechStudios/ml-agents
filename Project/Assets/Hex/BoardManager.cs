@@ -11,6 +11,7 @@ public class BoardManager : MonoBehaviour
     public InputManager iM;
     public BoardAnalyser bA;
 
+    public List<Vector2Int> validMoves;
     public List<Vector2Int> invalidMoves;
 
     public Vector2Int size; //Determines the size of the board
@@ -28,10 +29,16 @@ public class BoardManager : MonoBehaviour
     public int player2Score;
     public TextMeshProUGUI counter;
 
+    //activate ml-agents
+    //cd C:\...\ml-agents
+    //mlagents-learn config/trainer_config.yaml --curriculum config/curricula/hex/hex.yaml --run-id hex_01 --train
+
 
     // Start is called before the first frame update
     void Start()
     {
+        Time.timeScale = 10f;
+
         iM = GetComponent<InputManager>();
         bA = GetComponent<BoardAnalyser>();
 
@@ -73,6 +80,8 @@ public class BoardManager : MonoBehaviour
                 gridTiles[i, j].transform.parent = transform;
 
                 gridTiles[i, j].GetComponent<TileObject>().bM = GetComponent<BoardManager>();
+
+                validMoves.Add(new Vector2Int(i, j));
             }
         }
 
@@ -133,6 +142,9 @@ public class BoardManager : MonoBehaviour
             }
 
             iM.player2Turn = lastGameFirstPlayer;
+
+            validMoves.Clear();
+            invalidMoves.Clear();
 
             bA.win = false;
         }
