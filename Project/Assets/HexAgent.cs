@@ -7,7 +7,6 @@ public class HexAgent : Agent
 {
     [Header("Specific to HexAgent")]
     public BoardManager bM;
-    public int team;
     Vector2Int m_tileChoice;
     IFloatProperties m_ResetParams;
 
@@ -19,85 +18,90 @@ public class HexAgent : Agent
 
     public override void CollectDiscreteActionMasks(DiscreteActionMasker actionMasker)
     {
-        base.CollectDiscreteActionMasks(actionMasker);
+        //actionMasker.SetMask(0, invalidx);
+        //actionMasker.SetMask(0, invalidy);
     }
 
     public override void CollectObservations(VectorSensor sensor)
-    {   
-
-        Debug.Log("x");
-        foreach(GameObject tile in bM.gridTiles)
+    {
+        Debug.Log("CollectObservations");
+        foreach (GameObject tile in bM.gridTiles)
         {
             Vector2Int tileID = tile.GetComponent<TileObject>().tileID;
             int playerHolding = tile.GetComponent<TileObject>().playerHoldingInt;
 
-            Vector3Int inputVector = new Vector3Int(tileID.x, tileID.y, playerHolding); //(CoordsX),(CoordsY),(PLayer:0,1,2)
+            Vector3Int boardScenario = new Vector3Int(tileID.x, tileID.y, playerHolding); //(CoordsX),(CoordsY),(PLayer:0,1,2)
 
-            sensor.AddObservation(inputVector);
-            Debug.Log(inputVector);
+            sensor.AddObservation(boardScenario);
+            //Debug.Log(boardScenario);
 
         }
 
         base.CollectObservations(sensor);
     }
 
+    private void Update()
+    {
+        if(bM.bA.win == new Vector2Int(1,1))
+        {
+            SetReward(1);
+            Done();
+            AgentReset();
+        }
+        if(bM.bA.win == new Vector2Int(1, 2))
+        {
+            SetReward(-1);
+            Done();
+            AgentReset();
+        }
+
+        //Debug.Log(GetCumulativeReward());
+    }
+
+
     public override void AgentAction(float[] vectorAction)
     {
-
-        Debug.Log("actionS");
-
         int x = Mathf.RoundToInt(vectorAction[0]);
         int y = Mathf.RoundToInt(vectorAction[1]);
 
         Vector2Int choice = new Vector2Int(x, y);
 
-        if(team == 1 && !bM.iM.player2Turn || team == 2 && bM.iM.player2Turn)
+        //Debug.Log(choice);
+        if (bM.validMoves.Contains(choice)) //valid move, continue
         {
-            if (!bM.invalidMoves.Contains(choice)) //valid move, continue
+            if (TeamId == 0 && !bM.iM.player2Turn || TeamId == 1 && bM.iM.player2Turn)
             {
+                //Debug.Log("Part1");
 
-            }
-            else //picked a spot already taken
-            {
-                SetReward(-1f);
-                Done();
-            }
+                //Debug.Log("Successful Move at " + choice);
+                if (!bM.iM.player2Turn && TeamId == 0 && bM.iM.inputAllowed)
+                {
+                    bM.iM.aiMove = choice;
+                }
+                if (bM.iM.player2Turn && TeamId == 1 && bM.iM.inputAllowed)
+                {
+                    bM.iM.aiMove = choice;
+                }
 
-            if (x > bM.staticSize.x || x < 0) //OOB X
-            {
-                SetReward(-1f);
-                Done();
-            }
-            else
-            {
-                AddReward(0.125f);
+                TileRewards(choice);
             }
 
-            if (y > bM.staticSize.y || y < 0) //OOB Y
-            {
-                SetReward(-1f);
-                Done();
-            }
-            else
-            {
-                AddReward(0.125f);
-            }
-
-            if (bM.gridTiles[x, y].GetComponent<TileObject>().playerHoldingInt != 0)
-            {
-                SetReward(-1f);
-                Done();
-            }
-            else //valid
-            {
-                AddReward(0.25f);
-            }
-
-            Debug.Log("actionE");
-
-            bM.iM.aiMove = choice;
         }
-        
+        else //picked a spot already taken/invalid
+        {
+            AddReward(-1f);
+            Done();
+            AgentReset();
+        }
+    }
+
+    void TileRewards(Vector2Int tile)
+    {
+        TileObject data = bM.gridTiles[tile.x, tile.y].GetComponent<TileObject>();
+        foreach (TileObject vein in data.vein)
+        {
+            //Debug.Log(vein);
+        }
     }
 
     public override void AgentReset()

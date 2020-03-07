@@ -11,7 +11,12 @@ public class TileObject : MonoBehaviour
     public int playerHoldingInt;
     public List<Vector2Int> adjacentTiles = new List<Vector2Int>();
     public List<Vector2Int> sameAdjacent = new List<Vector2Int>();
-    public List<GameObject> adjacentGO = new List<GameObject>();
+    public List<TileObject> adjacentGO = new List<TileObject>();
+
+
+    public List<TileObject> vein = new List<TileObject>();
+    public List<int> veinConditions = new List<int>();
+
     public int lastPlayer;
     private int previousPlayer;
     public List<bool> winCondition = new List<bool>();
@@ -40,6 +45,9 @@ public class TileObject : MonoBehaviour
         {
             winCondition[3] = true; //Right
         }
+
+        vein.Add(this);
+
     }
 
     // Update is called once per frame
@@ -59,16 +67,38 @@ public class TileObject : MonoBehaviour
         if (playerHolding[1] == true) //Player1
         {
             playerHoldingInt = 1;
-            gameObject.GetComponent<SpriteRenderer>().color = new Color(1,0,0);
             gameObject.layer = 10;
+
+            if(veinConditions.Contains(0) || veinConditions.Contains(1))
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 0, 0);
+            }
+            else
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(0.5f, 0, 0);
+            }
+
+            bM.invalidMoves.Add(tileID);
+
         }
         if (playerHolding[2] == true) //Player2
         {
             playerHoldingInt = 2;
-            gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1);
             gameObject.layer = 11;
-        }
 
+            if (veinConditions.Contains(2) || veinConditions.Contains(3))
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1);
+            }
+            else
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0.5f);
+            }
+
+            bM.invalidMoves.Add(tileID);
+        }
+        CheckForWin();
+        CheckForPlayerChange();
     }
 
     void CheckForPlayerChange()
@@ -88,6 +118,65 @@ public class TileObject : MonoBehaviour
             GetAdjacent(tileID.x, tileID.y);
         }
         previousPlayer = lastPlayer;
+    }
+
+    void CheckForWin()
+    {
+        //Debug.Log("Called," + fromTo);
+        //From tile, get adjacent tiles, fill until reach other end then WIN, else, lose
+
+        //TileObject AdjacentGO
+
+        if (playerHolding[1]) //Player 1 wants top[0] and bottom[1]
+        {
+            if (veinConditions.Contains(0) && veinConditions.Contains(1))
+            {
+                bM.bA.win = new Vector2Int(1, 1);
+            }
+        }
+        if (playerHolding[2])//Player 2 wants left[2] and right[3]
+        {
+            if (veinConditions.Contains(2) && veinConditions.Contains(3))
+            {
+                bM.bA.win = new Vector2Int(1, 2);
+            }
+        }
+
+    }
+
+    void UpdateVeinConditions()
+    {
+        foreach(TileObject tile in vein)
+        {
+            if (tile.winCondition[0]) //check for win condition
+            {
+                if (!veinConditions.Contains(0)) //if not already in vein list
+                {
+                    veinConditions.Add(0);
+                }
+            }
+            if (tile.winCondition[1]) //check for win condition
+            {
+                if (!veinConditions.Contains(1)) //if not already in vein list
+                {
+                    veinConditions.Add(1);
+                }
+            }
+            if (tile.winCondition[2]) //check for win condition
+            {
+                if (!veinConditions.Contains(2)) //if not already in vein list
+                {
+                    veinConditions.Add(2);
+                }
+            }
+            if (tile.winCondition[3]) //check for win condition
+            {
+                if (!veinConditions.Contains(3)) //if not already in vein list
+                {
+                    veinConditions.Add(3);
+                }
+            }
+        }
     }
 
 
@@ -138,12 +227,44 @@ public class TileObject : MonoBehaviour
     {
         foreach(Vector2Int id in sameAdjacent)
         {
-            if(!adjacentGO.Contains(bM.gridTiles[id.x, id.y].gameObject))
+            if(!adjacentGO.Contains(bM.gridTiles[id.x, id.y].GetComponent<TileObject>()))
             {
-                adjacentGO.Add(bM.gridTiles[id.x, id.y].gameObject);
+                adjacentGO.Add(bM.gridTiles[id.x, id.y].GetComponent<TileObject>());
             }
             //Debug.Log(id);
         }
+
+        BuildVein(tileID);
+
+    }
+
+
+    private void BuildVein(Vector2Int fromTo)
+    {
+        TileObject tile = bM.gridTiles[fromTo.x, fromTo.y].GetComponent<TileObject>();
+
+        //Debug.Log("else");
+        foreach (TileObject adjacentTile in tile.adjacentGO)
+        {
+            if (!vein.Contains(adjacentTile)) //If not already in list
+            {
+                adjacentTile.vein.Add(this);
+                vein.Add(adjacentTile); //Add to vein
+                BuildVein(adjacentTile.tileID); //loop for new adjacent tiles
+            }
+
+            foreach (TileObject veinTile in adjacentTile.vein) //get adjacent tile's vein and add to your own
+            {
+                if (!vein.Contains(veinTile))
+                {
+                    vein.Add(veinTile);
+                }
+            }
+        }
+
+        UpdateVeinConditions();
+
+
     }
 
 }

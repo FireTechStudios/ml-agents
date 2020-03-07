@@ -2,12 +2,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAgents;
+using MLAgents.Sensors;
+using MLAgents.SideChannels;
 
 public class InputManager : MonoBehaviour
 {
     public BoardManager bM;
 
-    public bool[] bots = new bool[2] {true, true}; //Both unchecked, both bots
+    public bool[] agent = new bool[2] {true, true}; //Both unchecked, both bots
+    public bool playerTrueBotFalse = false;
     public Vector2Int[] playerChoice = new Vector2Int[2] {Vector2Int.zero, Vector2Int.zero};
 
     public Vector2Int aiMove = new Vector2Int(-1,-1);
@@ -20,6 +24,8 @@ public class InputManager : MonoBehaviour
     public List<Vector2Int> player2Tiles;
 
     public List<Vector2Int>[] playerTiles = new List<Vector2Int>[3] {null, null, null};
+
+    public bool inputAllowed;
 
     Ray ray;
     RaycastHit hit;
@@ -34,47 +40,58 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        if (Input.GetMouseButtonDown(0) && !player2Turn && bots[0] == false)//Player 1 human
+        if (inputAllowed)
         {
-            SelectTile(rayCastClick());
-        }
-        if (Input.GetMouseButtonDown(0) && player2Turn && bots[1] == false)//Player 2 human
-        {
-            SelectTile(rayCastClick());
-        }
-
-        if (!player2Turn && bots[0] == true && aiMove != new Vector2Int(-1, -1))//Player 1 random
-        {
-            SelectTile(aiMove);
-            aiMove = new Vector2Int(-1, -1);
-        }
-        if (player2Turn && bots[1] == true && aiMove != new Vector2Int(-1, -1))//Player 2 random
-        {
-            SelectTile(aiMove);
-            aiMove = new Vector2Int(-1, -1);
-        }
-        if(false) //random bots
-        {
-            if (!player2Turn && bots[0] == true)//Player 1 random
+            Academy.Instance.EnvironmentStep();
+            if (!player2Turn) //P1 turn
             {
-                int x = UnityEngine.Random.Range(0, bM.staticSize.x);
-                int y = UnityEngine.Random.Range(0, bM.staticSize.y);
-
-                Vector2Int randomChoice = new Vector2Int(x, y);
-
-                SelectTile(randomChoice);
+                if (agent[0]) //agent as P1
+                {
+                    SelectTile(aiMove);
+                    aiMove = new Vector2Int(-1, -1);
+                }
+                else if(playerTrueBotFalse) //player
+                {
+                    if (Input.GetMouseButtonDown(0))//Player 1 human
+                    {
+                        SelectTile(rayCastClick()); //player against agent
+                    }
+                }
+                else //random
+                {
+                    SelectTile(RandomVector());
+                }
             }
-            if (player2Turn && bots[1] == true)//Player 2 random
+            else //P2 turn
             {
-                int x = UnityEngine.Random.Range(0, bM.staticSize.x);
-                int y = UnityEngine.Random.Range(0, bM.staticSize.y);
-
-                Vector2Int randomChoice = new Vector2Int(x, y);
-
-                SelectTile(randomChoice);
+                if (agent[1]) //agent as P1
+                {
+                    SelectTile(aiMove);
+                    aiMove = new Vector2Int(-1, -1);
+                }
+                else if (playerTrueBotFalse) //player
+                {
+                    if (Input.GetMouseButtonDown(0))//Player 1 human
+                    {
+                        SelectTile(rayCastClick()); //player against agent
+                    }
+                }
+                else //random
+                {
+                    SelectTile(RandomVector());
+                }
             }
         }
+    }
+    
+    public Vector2Int RandomVector()
+    {
+        int x = bM.validMoves[UnityEngine.Random.Range(0, bM.validMoves.Count)].x;
+        int y = bM.validMoves[UnityEngine.Random.Range(0, bM.validMoves.Count)].y;
+
+        Vector2Int randomChoice = new Vector2Int(x, y);
+
+        return(randomChoice);
     }
 
     public Vector2Int rayCastClick()
@@ -102,22 +119,11 @@ public class InputManager : MonoBehaviour
 
     void SelectTile(Vector2Int tileId)
     {
-        
-        bool validChoice = false;
-
-        foreach (GameObject x in bM.gridTiles) //If value chosen is within range
-        {
-            if (x.GetComponent<TileObject>().tileID == tileId)
-            {
-                validChoice = true;
-            }
-        }
-
-        bool[] holding = bM.gridTiles[tileId.x, tileId.y].GetComponent<TileObject>().playerHolding;
+        inputAllowed = false;
 
         try
         {
-            if (holding[0] == true && validChoice && !bM.bA.win) //empty tile, continue
+            if (bM.validMoves.Contains(tileId) == true) //empty tile, continue
             {
                 TileObject tile = bM.gridTiles[tileId.x, tileId.y].GetComponent<TileObject>();
                 Array.Clear(tile.playerHolding, 0, tile.playerHolding.Length); //Set affiliation to false
@@ -133,7 +139,6 @@ public class InputManager : MonoBehaviour
                     player2Tiles.Add(new Vector2Int(id.x, id.y));
 
                     bM.validMoves.Remove(new Vector2Int(id.x, id.y));
-                    bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
 
                 }
                 else
@@ -143,19 +148,26 @@ public class InputManager : MonoBehaviour
                     player1Tiles.Add(new Vector2Int(id.x, id.y));
 
                     bM.validMoves.Remove(new Vector2Int(id.x, id.y));
-                    bM.invalidMoves.Add(new Vector2Int(id.x, id.y));
 
                 }
-
                 playerTiles[1] = player1Tiles;
                 playerTiles[2] = player2Tiles;
 
             }
+
         }
         catch
         {
             //invalid selection
         }
 
+        StartCoroutine(RenableInput());
+
+    }
+
+    public IEnumerator RenableInput()
+    {
+        yield return new WaitForSeconds(0);
+        inputAllowed = true;
     }
 }

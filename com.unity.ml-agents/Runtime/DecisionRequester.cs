@@ -10,6 +10,7 @@ namespace MLAgents
     [AddComponentMenu("ML Agents/Decision Requester", (int)MenuGroup.Default)]
     internal class DecisionRequester : MonoBehaviour
     {
+
         /// <summary>
         /// The frequency with which the agent requests a decision. A DecisionPeriod of 5 means
         /// that the Agent will request a decision every 5 Academy steps.
@@ -46,7 +47,9 @@ namespace MLAgents
         {
             m_Offset = offsetStep ? gameObject.GetInstanceID() : 0;
             m_Agent = gameObject.GetComponent<Agent>();
+
             Academy.Instance.AgentSetStatus += MakeRequests;
+            Academy.Instance.AutomaticSteppingEnabled = false;
         }
 
         void OnDestroy()
