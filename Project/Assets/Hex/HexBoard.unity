@@ -931,7 +931,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bM: {fileID: 707711665}
   agent: 0100
-  playerTrueBotFalse: 0
+  playerTrueBotFalse: 1
   playerChoice:
   - {x: 0, y: 0}
   - {x: 0, y: 0}
@@ -1095,7 +1095,7 @@ MonoBehaviour:
     vectorActionSpaceType: 0
   m_Model: {fileID: 5022602860645237092, guid: 2efd36b023af28f4aa2599a5adf99a52, type: 3}
   m_InferenceDevice: 1
-  m_BehaviorType: 0
+  m_BehaviorType: 2
   m_BehaviorName: HexAgent
   TeamId: 0
   m_UseChildSensors: 0
@@ -1112,7 +1112,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DecisionPeriod: 1
-  TakeActionsBetweenDecisions: 1
+  TakeActionsBetweenDecisions: 0
   offsetStep: 0
 --- !u!1 &1388221879
 GameObject:

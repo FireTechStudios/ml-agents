@@ -2,6 +2,7 @@
 using MLAgents;
 using MLAgents.Sensors;
 using MLAgents.SideChannels;
+using System.Collections;
 
 public class HexAgent : Agent
 {
@@ -95,12 +96,18 @@ public class HexAgent : Agent
         }
     }
 
-    void TileRewards(Vector2Int tile)
+    public IEnumerator TileRewards(Vector2Int tile)
     {
         TileObject data = bM.gridTiles[tile.x, tile.y].GetComponent<TileObject>();
+
+        yield return new WaitForSeconds(0.1f);
+
         foreach (TileObject vein in data.vein)
         {
-            //Debug.Log(vein);
+            if(vein.tileID != tile) //ignore self vein
+            {
+                Debug.Log("vein tiel detected");
+            }
         }
     }
 
